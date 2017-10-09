@@ -40,35 +40,59 @@ Given /^I am on the RottenPotatoes home page$/ do
 
 
 # New step definitions to be completed for HW5. 
-# Note that you may need to add additional step definitions beyond these
-
-
-# Add a declarative step here for populating the DB with movies.
+# Note that you may need to add additional step definitions beyond these   
 
 Given /the following movies have been added to RottenPotatoes:/ do |movies_table|
-  pending  # Remove this statement when you finish implementing the test step
   movies_table.hashes.each do |movie|
-    # Each returned movie will be a hash representing one row of the movies_table
-    # The keys will be the table headers and the values will be the row contents.
-    # Entries can be directly to the database with ActiveRecord methods
-    # Add the necessary Active Record call(s) to populate the database.
+    Movie.create(:title => movie[:title], :rating => movie[:rating], :release_date => movie[:release_date])
   end
 end
 
 When /^I have opted to see movies rated: "(.*?)"$/ do |arg1|
-  # HINT: use String#split to split up the rating_list, then
-  # iterate over the ratings and check/uncheck the ratings
-  # using the appropriate Capybara command(s)
-  pending  #remove this statement after implementing the test step
+    selected_ratings = arg1.split(', ')
+    Movie.all_ratings.each do |rating|
+        if !selected_ratings.include? rating
+            uncheck("ratings_#{rating}")
+        end
+    end
+    click_button 'Refresh'
 end
 
 Then /^I should see only movies rated: "(.*?)"$/ do |arg1|
-  pending  #remove this statement after implementing the test step
+    ratings = arg1.split(', ')
+    value = 0
+    ratings.each do |rating|
+        value = value + Movie.where(:rating => rating).count
+    end
+    
+    rows = page.all("table#movies tr").count
+    rows.should == value + 1
 end
 
 Then /^I should see all of the movies$/ do
-  pending  #remove this statement after implementing the test step
+    value = Movie.count
+    rows = page.all("table#movies tr").count.should
+    rows.should == value + 1 
 end
 
+When /^I click on "(.*?)"$/ do |arg1|
+    click_link(arg1)
+end
 
-
+Then /^I should see "(.*?)" before "(.*?)"$/ do |arg1, arg2|
+    arg1_found = false
+    arg2_found = false
+    result = false
+    all("tr").each do |tr|
+        if tr.has_content?(arg1)
+            arg1_found = true
+            if arg2_found == false
+                result = true
+                break
+            end
+        elsif tr.has_content?(arg2)
+            arg2_found = true
+        end
+    end
+    expect(result).to be_truthy
+end
